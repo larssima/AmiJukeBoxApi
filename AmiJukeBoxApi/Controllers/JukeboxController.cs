@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using AmiJukeBoxApi.MqttFolder;
+using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace AmiJukeBoxApi.Controllers
 {
@@ -15,13 +17,37 @@ namespace AmiJukeBoxApi.Controllers
 
         [HttpGet]
         [Route("play/{jbsong}")]
-        public ActionResult<bool> PlaySong(string jbsong)
+        public ActionResult<string> PlaySong(string jbsong)
         {
-            if (jbsong.Length > 3) return false;
+            if (jbsong.Length > 3) return jbsong+" not valid selection";
             var aletter = jbsong.Substring(0, 1);
             var anumber = jbsong.Substring(1, jbsong.Length - 1);
             _mqtt.PlaySelectionOnJukebox(aletter.ToUpper(),anumber);
-            return true;
+            var songName = GetArtistSongName(aletter.ToUpper(),anumber);
+            return songName;
+        }
+
+        private string GetArtistSongName(string letter,string number)
+        {
+            var nbr = 0;
+            var sql = "";
+            if (!int.TryParse(number, out nbr)) return "";
+            if (nbr % 2 == 0)
+            {
+                sql = string.Format("SELECT CONCAT(Artist1,' - ',B1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumberb='{1}' AND Archived=0", letter, nbr);
+            }
+            else
+            {
+                sql = string.Format("SELECT CONCAT(Artist1,' - ',A1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumbera='{1}' AND Archived=0", letter, nbr);
+            }
+
+
+            using (System.Data.IDbConnection db = new MySqlConnection("Server = 127.0.0.1; Uid = lasse; Pwd = zals69; Database = amijukebox;"))
+
+            {
+                db.Open();
+                return db.Query<string>(sql).ToList()[0].ToString();
+            }
         }
 
         // GET api/values
