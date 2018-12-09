@@ -3,13 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using AmiJukeBoxApi.MqttFolder;
 
 namespace AmiJukeBoxApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class JukeboxController : ControllerBase
     {
+        private readonly Mqtt _mqtt = new Mqtt();
+
+        [HttpGet]
+        [Route("play/{jbsong}")]
+        public ActionResult<bool> PlaySong(string jbsong)
+        {
+            if (jbsong.Length > 3) return false;
+            var aletter = jbsong.Substring(0, 1);
+            var anumber = jbsong.Substring(1, jbsong.Length - 1);
+            _mqtt.PlaySelectionOnJukebox(aletter.ToUpper(),anumber);
+            return true;
+        }
+
         // GET api/values
         [HttpGet]
         public ActionResult<IEnumerable<string>> Get()
