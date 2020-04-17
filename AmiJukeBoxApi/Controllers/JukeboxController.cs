@@ -50,12 +50,53 @@ namespace AmiJukeBoxApi.Controllers
             }
         }
 
-        // GET api/values
         [HttpGet]
-        public ActionResult<IEnumerable<string>> Get()
+        //[Route("aselections")]
+        public ActionResult<string> ASelections()
         {
-            return new string[] { "value1", "value2" };
+            var aList = new List<JukeBoxSelection>();
+            aList = GetAllASongs();
+            foreach (JukeBoxSelection row in aList)
+            {
+                if (row.JbNumberA.Length == 1)
+                    row.JbNumberA = "0" + row.JbNumberA;
+            }
+            aList = aList.OrderBy(r => r.JbLetter).ThenBy(r => r.JbNumberA).ToList();
+            var result = "";
+            var url = "http://192.168.0.110:75/api/jukebox/play/";
+            foreach (JukeBoxSelection row in aList)
+            {
+                var number = row.JbNumberA.Replace("0", "");
+                result = result + row.JbLetter + row.JbNumberA + ": " + row.Artist1 + " - " + row.A1Song + "\n";
+            }
+            return result;
         }
+
+        private List<JukeBoxSelection> GetAllASongs()
+        {
+            var sql = "";
+            sql = "SELECT jbletter,jbnumbera,Artist1,A1Song FROM amijukebox.jbselection WHERE Archived=0";
+            using (System.Data.IDbConnection db = new MySqlConnection("Server = 127.0.0.1; Uid = lasse; Pwd = zals69; Database = amijukebox;"))
+            {
+                db.Open();
+                return db.Query<JukeBoxSelection>(sql).ToList<JukeBoxSelection>();
+            }
+        }
+
+        public class JukeBoxSelection
+        {
+            public string JbLetter { get; set; }
+            public string JbNumberA { get; set; }
+            public string Artist1 { get; set; }
+            public string A1Song { get; set; }
+        }
+
+        // GET api/values
+        //[HttpGet]
+        //public ActionResult<IEnumerable<string>> Get()
+        //{
+        //    return new string[] { "value1", "value2" };
+        //}
 
         // GET api/values/5
         [HttpGet("{id}")]
