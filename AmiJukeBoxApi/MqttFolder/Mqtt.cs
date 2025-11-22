@@ -12,7 +12,7 @@ namespace AmiJukeBoxApi.MqttFolder
 {
     public class Mqtt
     {
-        private string _raspberryip = "192.168.0.134"; //ConfigurationManager.AppSettings["RaspberryPiAddress"];
+        private string _raspberryip = "192.168.68.134"; //ConfigurationManager.AppSettings["RaspberryPiAddress"];
 
         public void SendCancelToSubscriber()
         {

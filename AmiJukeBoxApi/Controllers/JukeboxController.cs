@@ -16,6 +16,20 @@ namespace AmiJukeBoxApi.Controllers
         private readonly Mqtt _mqtt = new Mqtt();
 
         [HttpGet]
+        [Route("play/random")]
+        public ActionResult<string> PlayRandomSong()
+        {
+            var letters = new[] { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K" };
+            var random = new Random();
+            var randomLetter = letters[random.Next(letters.Length)];
+            var randomNumber = random.Next(1, 21).ToString();
+            
+            _mqtt.PlaySelectionOnJukebox(randomLetter, randomNumber);
+            var songName = GetArtistSongName(randomLetter, randomNumber);
+            return $"{randomLetter}{randomNumber}: {songName}";
+        }
+
+        [HttpGet]
         [Route("play/{jbsong}")]
         public ActionResult<string> PlaySong(string jbsong)
         {
