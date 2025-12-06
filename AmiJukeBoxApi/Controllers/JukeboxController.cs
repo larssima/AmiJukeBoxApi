@@ -30,6 +30,36 @@ namespace AmiJukeBoxApi.Controllers
         }
 
         [HttpGet]
+        [Route("play/randoma")]
+        public ActionResult<string> PlayRandomSongA()
+        {
+            var letters = new[] { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K" };
+            var random = new Random();
+            var randomLetter = letters[random.Next(letters.Length)];
+            // Only odd numbers for A sides (1, 3, 5, 7, 9, 11, 13, 15, 17, 19)
+            var randomNumber = (random.Next(1, 11) * 2 - 1).ToString();
+            
+            _mqtt.PlaySelectionOnJukebox(randomLetter, randomNumber);
+            var songName = GetArtistSongName(randomLetter, randomNumber);
+            return $"{randomLetter}{randomNumber}: {songName}";
+        }
+
+        [HttpGet]
+        [Route("play/randomb")]
+        public ActionResult<string> PlayRandomSongB()
+        {
+            var letters = new[] { "A", "B", "C", "D", "E", "F", "G", "H", "J", "K" };
+            var random = new Random();
+            var randomLetter = letters[random.Next(letters.Length)];
+            // Only even numbers for B sides (2, 4, 6, 8, 10, 12, 14, 16, 18, 20)
+            var randomNumber = (random.Next(1, 11) * 2).ToString();
+            
+            _mqtt.PlaySelectionOnJukebox(randomLetter, randomNumber);
+            var songName = GetArtistSongName(randomLetter, randomNumber);
+            return $"{randomLetter}{randomNumber}: {songName}";
+        }
+
+        [HttpGet]
         [Route("play/{jbsong}")]
         public ActionResult<string> PlaySong(string jbsong)
         {
@@ -39,6 +69,14 @@ namespace AmiJukeBoxApi.Controllers
             _mqtt.PlaySelectionOnJukebox(aletter.ToUpper(),anumber);
             var songName = GetArtistSongName(aletter.ToUpper(),anumber);
             return songName;
+        }
+
+        [HttpGet]
+        [Route("cancel")]
+        public ActionResult<string> CancelRecord()
+        {
+            _mqtt.SendCancelToSubscriber();
+            return "Record cancelled";
         }
 
         private string GetArtistSongName(string letter,string number)
