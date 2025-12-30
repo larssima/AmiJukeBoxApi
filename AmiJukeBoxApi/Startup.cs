@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace AmiJukeBoxApi
 {
@@ -28,6 +29,7 @@ namespace AmiJukeBoxApi
             }
 
             app.UseRouting();
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();

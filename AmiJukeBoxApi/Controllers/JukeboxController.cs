@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using AmiJukeBoxApi.MqttFolder;
 using Dapper;
 using MySql.Data.MySqlClient;
@@ -14,6 +15,14 @@ namespace AmiJukeBoxApi.Controllers
     public class JukeboxController : ControllerBase
     {
         private readonly Mqtt _mqtt = new Mqtt();
+        private readonly IConfiguration _configuration;
+        private readonly string _connectionString;
+
+        public JukeboxController(IConfiguration configuration)
+        {
+            _configuration = configuration;
+            _connectionString = _configuration.GetConnectionString("DefaultConnection");
+        }
 
         [HttpGet]
         [Route("play/random")]
@@ -94,7 +103,7 @@ namespace AmiJukeBoxApi.Controllers
             }
 
 
-            using (System.Data.IDbConnection db = new MySqlConnection("Server = 127.0.0.1; Uid = lasse; Pwd = zals69; Database = amijukebox;"))
+            using (System.Data.IDbConnection db = new MySqlConnection(_connectionString))
 
             {
                 db.Open();
@@ -103,7 +112,7 @@ namespace AmiJukeBoxApi.Controllers
         }
 
         [HttpGet]
-        //[Route("aselections")]
+        [Route("aselections")]
         public ActionResult<string> ASelections()
         {
             var aList = new List<JukeBoxSelection>();
@@ -128,7 +137,7 @@ namespace AmiJukeBoxApi.Controllers
         {
             var sql = "";
             sql = "SELECT jbletter,jbnumbera,Artist1,A1Song FROM amijukebox.jbselection WHERE Archived=0";
-            using (System.Data.IDbConnection db = new MySqlConnection("Server = 127.0.0.1; Uid = lasse; Pwd = zals69; Database = amijukebox;"))
+            using (System.Data.IDbConnection db = new MySqlConnection(_connectionString))
             {
                 db.Open();
                 return db.Query<JukeBoxSelection>(sql).ToList<JukeBoxSelection>();
