@@ -75,9 +75,32 @@ namespace AmiJukeBoxApi.Controllers
             if (jbsong.Length > 3) return jbsong+" not valid selection";
             var aletter = jbsong.Substring(0, 1);
             var anumber = jbsong.Substring(1, jbsong.Length - 1);
-            _mqtt.PlaySelectionOnJukebox(aletter.ToUpper(),anumber);
+            
+            try
+            {
+                _mqtt.PlaySelectionOnJukebox(aletter.ToUpper(),anumber);
+            }
+            catch (Exception ex)
+            {
+                // MQTT failed, but continue with database lookup
+                Console.WriteLine($"MQTT connection failed: {ex.Message}");
+            }
+            
             var songName = GetArtistSongName(aletter.ToUpper(),anumber);
             return songName;
+        }
+
+        [HttpGet]
+        [Route("test-db/{jbsong}")]
+        public ActionResult<string> TestDatabaseOnly(string jbsong)
+        {
+            if (jbsong.Length > 3) return jbsong+" not valid selection";
+            var aletter = jbsong.Substring(0, 1);
+            var anumber = jbsong.Substring(1, jbsong.Length - 1);
+            
+            // Skip MQTT, only test database
+            var songName = GetArtistSongName(aletter.ToUpper(),anumber);
+            return $"Database test result: {songName}";
         }
 
         [HttpGet]
@@ -92,22 +115,36 @@ namespace AmiJukeBoxApi.Controllers
         {
             var nbr = 0;
             var sql = "";
-            if (!int.TryParse(number, out nbr)) return "";
-            if (nbr % 2 == 0)
+            if (!int.TryParse(number, out nbr)) return "Invalid number";
+            
+            try
             {
-                sql = string.Format("SELECT CONCAT(Artist1,' - ',B1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumberb='{1}' AND Archived=0", letter, nbr);
+                if (nbr % 2 == 0)
+                {
+                    sql = string.Format("SELECT CONCAT(Artist1,' - ',B1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumberb='{1}' AND Archived=0", letter, nbr);
+                }
+                else
+                {
+                    sql = string.Format("SELECT CONCAT(Artist1,' - ',A1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumbera='{1}' AND Archived=0", letter, nbr);
+                }
+
+                using (System.Data.IDbConnection db = new MySqlConnection(_connectionString))
+                {
+                    db.Open();
+                    var results = db.Query<string>(sql).ToList();
+                    if (results.Count > 0)
+                    {
+                        return results[0].ToString();
+                    }
+                    else
+                    {
+                        return $"No song found for {letter}{number}";
+                    }
+                }
             }
-            else
+            catch (Exception ex)
             {
-                sql = string.Format("SELECT CONCAT(Artist1,' - ',A1Song) FROM amijukebox.jbselection WHERE jbletter='{0}' AND jbnumbera='{1}' AND Archived=0", letter, nbr);
-            }
-
-
-            using (System.Data.IDbConnection db = new MySqlConnection(_connectionString))
-
-            {
-                db.Open();
-                return db.Query<string>(sql).ToList()[0].ToString();
+                return $"Database error: {ex.Message}";
             }
         }
 
